@@ -1,0 +1,71 @@
+###LibreNMS Docker
+https://github.com/jarischaefer/docker-librenms
+https://docs.librenms.org/Installation/Installation-Ubuntu-1604-Nginx/
+
+NOTE: APP URL MUST BE THE LAN IP OF YOUR DOCKER HOST WITH PORT NUMBER. OTHERWISE PAGES WILL BE BROKEN.
+
+1. docker run --rm jarischaefer/docker-librenms generate_key
+KEY: base64:[key-is-generated-here-in-this-format]
+
+
+2. create mariadb container
+docker run --name librenms-mariadb \
+--net=librenms-net --ip=[set-static-mariadb-container-ip] \
+--restart unless-stopped \
+--volume /media/data/container-data/librenms/db:/var/lib/mysql \
+-e MYSQL_ROOT_PASSWORD=[mysql-password] \
+-d -P mariadb:latest
+
+3. create librenms table
+
+CREATE DATABASE librenms CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+CREATE USER 'librenms'@'localhost' IDENTIFIED BY 'librenms';
+GRANT ALL PRIVILEGES ON librenms.*
+TO 'librenms'@'localhost'
+IDENTIFIED BY 'librenms'
+;
+GRANT ALL PRIVILEGES ON librenms.*
+TO 'librenms'@'[librenms-container-ip]'
+IDENTIFIED BY 'librenms'
+;
+FLUSH PRIVILEGES;
+exit
+
+3a. Install nano, edit /etc/mysql/mariadb.conf.d/50-server.cnf
+apt update
+apt install nano
+nano /etc/mysql/mariadb.conf.d/50-server.cnf
+add the following
+innodb_file_per_table=1
+lower_case_table_names=0
+
+restart mysql container
+
+4. run the librenms container
+docker run \
+--net=librenms-net --ip=[set-static-container-ip] \
+-d \
+-h librenms-8080 \
+-p 8080:80 \
+-e APP_KEY=base64:[app-key-previosly-generated]= \
+-e DB_HOST=[db-container-ip] \
+-e DB_NAME=[librenms] \
+-e DB_USER=librenms \
+-e DB_PASS=librenms \
+-e BASE_URL=http://docker-host-ip:8080 \
+-v /container-data/librenms/data/logs:/opt/librenms/logs \
+-v /container-data/librenms/data/rrd:/opt/librenms/rrd \
+--name librenms \
+jarischaefer/docker-librenms
+
+
+docker exec librenms setup_database
+docker exec librenms create_admin
+(admin / admin)
+
+
+NOTE: HAVING SOME ISSUES WITH localhost vs IP address - graphics not showing up, links going back to localhost, might need to be on port 80 only...
+https://github.com/jarischaefer/docker-librenms#running-the-container
+- may need to run a separate Docker VM with LibreNMS as the only container
+
+https://docs.librenms.org/Support/FAQ/#how-do-i-move-my-librenms-install-to-another-server

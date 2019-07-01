@@ -1,0 +1,4 @@
+### Gogs Git Server ### WIP ### NEED MORE INFORMATION TO GET IT RUNNING ###
+docker run --name=gogs -p 10022:22 -p 10080:3000 -v /media/data/container-data/gogs:/data gogs/gogs
+docker run --name=gogs --net=librenms-net --ip=[set-static-gogs-container-ip] --restart always -p 10022:22 -p 10080:3000 -v /media/data/container-data/gogs/data:/data gogs/gogs
+### may need additional information on creating the repo

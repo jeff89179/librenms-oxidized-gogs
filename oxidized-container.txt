@@ -1,0 +1,67 @@
+### Oxidized Docker Setup
+## from here... https://hub.docker.com/r/oxidized/oxidized/#running-with-docker
+## removed the --rm tag so it doesn't exit cleanly?
+docker run -v /media/data/container-data/oxidized:/root/.config/oxidized -p 8888:8888/tcp --privileged --restart always --name oxidized -t oxidized/oxidized:latest oxidized
+
+### create router.db
+cd /media/data/container-data/oxidized/
+touch router.db
+### add an IP or hostname and save the file
+
+### set the config file, follow this template
+### WARNING: IF YOU RESTART THE CONTAINER, YOU NEED TO STOP THE CONTAINER, REMOVE THE PID FILE FROM THE OXIDIZED FOLDER (rm pid) and START THE CONTAINER AGAIN BEFORE IT WILL WORK AGAIN
+### REMOTE REPO IS FOR GIT BACKUP...SEE GOGS DOCKER CONFIG...UNCOMMENT THOSE LINES WHEN READY AND FOLLOW RESTART PROCEDURE
+---
+username: [username]
+password: [password]
+model: ios
+interval: 3600
+use_syslog: false
+debug: false
+threads: 30
+timeout: 20
+retries: 3
+prompt: !ruby/regexp /^([\w.@-]+[#>]\s?)$/
+rest: 0.0.0.0:8888
+next_adds_job: false
+vars:
+  enable: [enable-password]
+groups: {}
+models: {}
+pid: "/root/.config/oxidized/pid"
+log: "/root/.config/oxidized/log"
+input:
+  default: ssh,telnet
+  debug: true
+  ssh:
+    secure: false
+output:
+  default: git
+  debug: true
+  git:
+    user: Oxidized
+    email: o@example.com
+    repo: "/root/.config/oxidized/devices.git"
+source:
+  default: csv
+  csv:
+    file: "/root/.config/oxidized/router.db"
+    delimiter: !ruby/regexp /:/
+    map:
+      name: 0
+      model: 1
+      username: 2
+      password: 3
+    vars_map:
+      enable: 4
+model_map:
+  cisco: ios
+  asa: asa
+  hp: procurve
+hooks:
+  push_to_remote:
+    type: githubrepo
+    events: [post_store]
+    remote_repo: http://container-ip:3000/gogs/oxidized-backup.git
+    username: [gogs-username]
+    password: [gogs-password]
