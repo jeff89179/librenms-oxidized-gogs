@@ -18,4 +18,4 @@ done
 
 # Root Crontab Entry
 # /etc/crontab
-*/10 * * * * root /usr/bin/watchdog.sh > /dev/null 2>&1
+# */10 * * * * root /usr/bin/watchdog.sh > /dev/null 2>&1
